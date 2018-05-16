@@ -1,0 +1,35 @@
+{
+  "name": "serverless-spa-config",
+  "version": "1.0.0",
+  "description": "Serverless plugin to configure S3, CloudFront and Route53 for a SPA or JAMStack site.",
+  "author": "John Gilbert <john.gilbert@danteinc.com> (danteinc.com)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DanteInc/serverless-spa-config.git"
+  },
+  "keywords": [
+    "serverless",
+    "serverless plugin",
+    "cloudfront",
+    "route53",
+    "s3",
+    "spa",
+    "jamstack",
+    "aws",
+    "amazon web services",
+    "serverless.com"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint index.js",
+    "test": "npm run lint"
+  },
+  "dependencies": {
+    "js-yaml": "^3.10.0",
+    "lodash": "^4.13.1"
+  },
+  "devDependencies": {
+    "eslint": "^4.19.1"
+  }
+}
