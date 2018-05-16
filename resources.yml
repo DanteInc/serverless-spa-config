@@ -1,0 +1,168 @@
+---
+Resources:
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      # CorsConfiguration:
+      #   CorsRules:
+      #     - AllowedMethods:
+      #         - GET
+      #         - HEAD
+      #       AllowedOrigins:
+      #         - "*"
+      #       AllowedHeaders:
+      #         - Authorization
+      #       MaxAge: 3000
+            
+  RedirectBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ${self:custom.cdn.domainName}
+      WebsiteConfiguration:
+        RedirectAllRequestsTo:
+          HostName: ${self:custom.cdn.endpoint}
+            
+  WebsiteDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: Website ${opt:stage}-${self:service} (${opt:region})
+        Origins:
+          - Id: S3Origin
+            DomainName:
+              Fn::Select:
+                - 1
+                - Fn::Split:
+                  - '//'
+                  - Fn::GetAtt: [ WebsiteBucket, WebsiteURL ]
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+        Enabled: true
+        Aliases: ${self:custom.cdn.aliases}
+          # - ${self:custom.cdn.endpoint}
+        PriceClass: ${self:custom.cdn.priceClass}
+        DefaultRootObject: index.html
+        CustomErrorResponses:
+          - ErrorCachingMinTTL: 0
+            ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - HEAD
+            - GET
+          Compress: true
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          MinTTL: 0
+          DefaultTTL: 0
+          ViewerProtocolPolicy: allow-all
+        ViewerCertificate:
+          AcmCertificateArn: ${self:custom.cdn.acmCertificateArn}
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1
+        Logging:
+          IncludeCookies: true
+          Bucket: ${self:custom.cdn.logging.bucketName} # ${self:custom.cdn.logging.bucket}.s3.amazonaws.com
+          Prefix: ${self:custom.cdn.logging.prefix} # aws-cloudfront
+        WebACLId: ${self:custom.cdn.webACLId}
+
+  RedirectDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: Redirect ${opt:stage}-${self:service} (${opt:region})
+        Origins:
+          - Id: S3Origin
+            DomainName:
+              Fn::Select:
+                - 1
+                - Fn::Split:
+                  - '//'
+                  - Fn::GetAtt: [ RedirectBucket, WebsiteURL ]
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+        Enabled: true
+        Aliases:
+          - ${self:custom.cdn.domainName}
+        PriceClass: ${self:custom.cdn.priceClass}
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - HEAD
+            - GET
+          Compress: true
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          MinTTL: 31536000
+          DefaultTTL: 31536000
+          ViewerProtocolPolicy: allow-all
+        ViewerCertificate:
+          AcmCertificateArn: ${self:custom.cdn.acmCertificateArn}
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1
+        Logging:
+          IncludeCookies: true
+          Bucket: ${self:custom.cdn.logging.bucketName} # ${self:custom.cdn.logging.bucket}.s3.amazonaws.com
+          Prefix: ${self:custom.cdn.logging.prefix} # aws-cloudfront
+        WebACLId: ${self:custom.cdn.webACLId}
+
+  WebsiteEndpointRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: ${self:custom.cdn.hostedZoneId}
+      Name: ${self:custom.cdn.endpoint}.
+      Type: A
+      AliasTarget:
+        HostedZoneId: Z2FDTNDATAQYW2
+        DNSName:
+          Fn::GetAtt:
+            - WebsiteDistribution
+            - DomainName
+
+  RedirectEndpointRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: ${self:custom.cdn.hostedZoneId}
+      Name: ${self:custom.cdn.domainName}.
+      Type: A
+      AliasTarget:
+        HostedZoneId: Z2FDTNDATAQYW2
+        DNSName:
+          Fn::GetAtt:
+            - RedirectDistribution
+            - DomainName
+
+Outputs:
+  WebsiteBucketName:
+    Value:
+      Ref: WebsiteBucket
+  WebsiteS3URL:
+    Value:
+      Fn::GetAtt: [ WebsiteBucket, WebsiteURL ]
+  WebsiteDistributionURL:
+    Value:
+      Fn::Join:
+        - ''
+        - - https://
+          - Fn::GetAtt: [ WebsiteDistribution, DomainName ]
+  WebsiteDistributionId:
+    Value:
+      Ref: WebsiteDistribution
+  WebsiteURL:
+    Value: https://${self:custom.cdn.endpoint}
