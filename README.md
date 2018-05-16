@@ -8,7 +8,7 @@ Serverless plugin to configure S3, CloudFront and Route53 for a SPA or JAMStack 
 * Creates S3 Website redirect bucket _(when redirect:true)_
   * And creates corresponding CloudFront distribution and Route 53 RecordSet
 
-> This plugin is designed to work in conjunction with the _serverless-spa-deploy_ plugin.
+> This plugin is designed to work in conjunction with the [_serverless-spa-deploy_](https://github.com/DanteInc/serverless-spa-deploy) plugin.
 
 ## serverless.yml
 
@@ -29,7 +29,7 @@ custom:
     domainName: example.com
     endpoint: app.${self:custom.cdn.domainName}
   cdn:
-    # aliases: 
+    # aliases:
     #   - ${self:custom.cdn.endpoint}
     # priceClass: PriceClass_100
     # acmCertificateArn: arn:aws:acm:region:account-id:certificate/certificate-id
@@ -37,5 +37,5 @@ custom:
     #   bucketName: ${self:custom.cdn.logging.bucketName}.s3.amazonaws.com
     #   prefix: aws-cloudfront
     # webACLId: arn:aws:waf::account-id:resource-type/resource-id
-    # disabled: true 
+    # disabled: true
 ```
