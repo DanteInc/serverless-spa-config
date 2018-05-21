@@ -38,4 +38,5 @@ custom:
     #   prefix: aws-cloudfront
     # webACLId: arn:aws:waf::account-id:resource-type/resource-id
     # disabled: true
+    # enabled: stage1,stage2
 ```

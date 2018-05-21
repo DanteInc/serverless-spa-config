@@ -30,9 +30,14 @@ class Plugin {
       this.serverless.service.custom.cdn = {};
     }
 
+    if (!this.serverless.service.custom.dns) {
+      this.serverless.service.custom.dns = {};
+    }
+
     // everything except buckets
     const disabled = this.serverless.service.custom.cdn.disabled;
-    if (!disabled) {
+    const enabled = this.serverless.service.custom.cdn.enabled;
+    if ((disabled != undefined && !disabled) || (enabled && enabled.includes(this.options.stage))) {
       const distributionConfig = resources.Resources.WebsiteDistribution.Properties.DistributionConfig;
       const redirectDistributionConfig = resources.Resources.RedirectDistribution.Properties.DistributionConfig;
 
