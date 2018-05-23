@@ -7,17 +7,17 @@ Resources:
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: index.html
-      # CorsConfiguration:
-      #   CorsRules:
-      #     - AllowedMethods:
-      #         - GET
-      #         - HEAD
-      #       AllowedOrigins:
-      #         - "*"
-      #       AllowedHeaders:
-      #         - Authorization
-      #       MaxAge: 3000
-            
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods:
+              - GET
+              - HEAD
+            AllowedOrigins:
+              - '*'
+            AllowedHeaders:
+              - '*'
+            MaxAge: 3000
+
   RedirectBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -25,7 +25,7 @@ Resources:
       WebsiteConfiguration:
         RedirectAllRequestsTo:
           HostName: ${self:custom.cdn.endpoint}
-            
+
   WebsiteDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
