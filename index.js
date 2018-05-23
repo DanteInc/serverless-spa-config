@@ -111,6 +111,9 @@ class Plugin {
     if (acmCertificateArn) {
       distributionConfig.ViewerCertificate.AcmCertificateArn = acmCertificateArn;
       redirectDistributionConfig.ViewerCertificate.AcmCertificateArn = acmCertificateArn;
+
+      distributionConfig.DefaultCacheBehavior.ViewerProtocolPolicy = 'redirect-to-https';
+      redirectDistributionConfig.DefaultCacheBehavior.ViewerProtocolPolicy = 'redirect-to-https';
     } else {
       delete distributionConfig.ViewerCertificate;
       delete redirectDistributionConfig.ViewerCertificate;
