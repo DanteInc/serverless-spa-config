@@ -37,7 +37,7 @@ class Plugin {
     // everything except buckets
     const disabled = this.serverless.service.custom.cdn.disabled;
     const enabled = this.serverless.service.custom.cdn.enabled;
-    if ((disabled != undefined && !disabled) || (enabled && enabled.includes(this.options.stage))) {
+    if ((disabled === undefined && enabled === undefined ) || (disabled != undefined && !disabled) || (enabled != undefined && enabled.includes(this.options.stage))) {
       const distributionConfig = resources.Resources.WebsiteDistribution.Properties.DistributionConfig;
       const redirectDistributionConfig = resources.Resources.RedirectDistribution.Properties.DistributionConfig;
 
@@ -112,6 +112,12 @@ class Plugin {
       distributionConfig.ViewerCertificate.AcmCertificateArn = acmCertificateArn;
       redirectDistributionConfig.ViewerCertificate.AcmCertificateArn = acmCertificateArn;
 
+      const minimumProtocolVersion = this.serverless.service.custom.cdn.minimumProtocolVersion;
+      if (minimumProtocolVersion) {
+        distributionConfig.ViewerCertificate.MinimumProtocolVersion = minimumProtocolVersion;
+        redirectDistributionConfig.ViewerCertificate.MinimumProtocolVersion = minimumProtocolVersion;
+      }
+
       distributionConfig.DefaultCacheBehavior.ViewerProtocolPolicy = 'redirect-to-https';
       redirectDistributionConfig.DefaultCacheBehavior.ViewerProtocolPolicy = 'redirect-to-https';
     } else {
@@ -121,14 +127,14 @@ class Plugin {
   }
 
   prepareWaf(distributionConfig, redirectDistributionConfig) {
-    const WebACLId = this.serverless.service.custom.cdn.WebACLId;
+    const webACLId = this.serverless.service.custom.cdn.webACLId;
 
-    if (WebACLId) {
-      distributionConfig.WebACLId = WebACLId;
-      redirectDistributionConfig.WebACLId = WebACLId;
+    if (webACLId) {
+      distributionConfig.WebACLId = webACLId;
+      redirectDistributionConfig.WebACLId = webACLId;
     } else {
-      delete distributionConfig.WebACLId;
-      delete redirectDistributionConfig.WebACLId;
+      delete distributionConfig.webACLId;
+      delete redirectDistributionConfig.webACLId;
     }
   }
 
