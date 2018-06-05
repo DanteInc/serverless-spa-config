@@ -133,8 +133,8 @@ class Plugin {
       distributionConfig.WebACLId = webACLId;
       redirectDistributionConfig.WebACLId = webACLId;
     } else {
-      delete distributionConfig.webACLId;
-      delete redirectDistributionConfig.webACLId;
+      delete distributionConfig.WebACLId;
+      delete redirectDistributionConfig.WebACLId;
     }
   }
 
