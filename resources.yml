@@ -46,6 +46,21 @@ Resources:
               - - 'arn:aws:s3:::'
                 - Ref: WebsiteBucket
                 - '/*'
+          - Sid: OAIListBucket
+            Effect: Allow
+            Principal:
+              AWS:
+                Fn::Join:
+                - ' '
+                - - arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity
+                  - Ref: WebsiteBucketOriginAccessIdentity
+            Action:
+              - s3:ListBucket
+            Resource:
+              Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - Ref: WebsiteBucket
 
   WebsiteBucketOriginAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
