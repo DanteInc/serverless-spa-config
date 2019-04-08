@@ -41,6 +41,8 @@ class Plugin {
       const distributionConfig = resources.Resources.WebsiteDistribution.Properties.DistributionConfig;
       const redirectDistributionConfig = resources.Resources.RedirectDistribution.Properties.DistributionConfig;
 
+      this.prepareOriginAccessIdentity(resources.Resources);
+
       this.prepareComment(distributionConfig, redirectDistributionConfig);
       this.preparePriceClass(distributionConfig, redirectDistributionConfig);
 
@@ -51,6 +53,8 @@ class Plugin {
       this.prepareAliases(distributionConfig, redirectDistributionConfig);
       this.prepareWebsiteEndpointRecord(resources);
     } else {
+      delete resources.Resources.WebsiteBucketBucketPolicy;
+      delete resources.Resources.WebsiteBucketOriginAccessIdentity;
       delete resources.Resources.WebsiteDistribution;
       delete resources.Resources.WebsiteEndpointRecord;
       delete resources.Resources.RedirectDistribution;
@@ -69,6 +73,13 @@ class Plugin {
       delete resources.Resources.RedirectDistribution;
       delete resources.Resources.RedirectEndpointRecord;
     }
+  }
+
+  prepareOriginAccessIdentity(resources) {
+    resources.WebsiteBucket.Properties.AccessControl = 'Private';
+
+    const name = this.serverless.getProvider('aws').naming.getApiGatewayName();
+    resources.WebsiteBucketOriginAccessIdentity.Properties.CloudFrontOriginAccessIdentityConfig.Comment = `Website: ${name} (${this.options.region})`;
   }
 
   prepareComment(distributionConfig, redirectDistributionConfig) {
