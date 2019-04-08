@@ -3,10 +3,7 @@ Resources:
   WebsiteBucket:
     Type: AWS::S3::Bucket
     Properties:
-      AccessControl: PublicRead
-      WebsiteConfiguration:
-        IndexDocument: index.html
-        ErrorDocument: index.html
+      AccessControl: Private
       CorsConfiguration:
         CorsRules:
           - AllowedMethods:
@@ -26,6 +23,36 @@ Resources:
         RedirectAllRequestsTo:
           HostName: ${self:custom.cdn.endpoint}
 
+  WebsiteBucketBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: WebsiteBucket
+      PolicyDocument:
+        Statement:
+          - Sid: OAIGetObject
+            Effect: Allow
+            Principal:
+              AWS:
+                Fn::Join:
+                - ' '
+                - - arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity
+                  - Ref: WebsiteBucketOriginAccessIdentity
+            Action:
+              - s3:GetObject
+            Resource:
+              Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - Ref: WebsiteBucket
+                - '/*'
+
+  WebsiteBucketOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: Website ${opt:stage}-${self:service} (${opt:region})
+
   WebsiteDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -34,13 +61,13 @@ Resources:
         Origins:
           - Id: S3Origin
             DomainName:
-              Fn::Select:
-                - 1
-                - Fn::Split:
-                  - '//'
-                  - Fn::GetAtt: [ WebsiteBucket, WebsiteURL ]
-            CustomOriginConfig:
-              OriginProtocolPolicy: http-only
+              Fn::GetAtt: [WebsiteBucket, DomainName]
+            S3OriginConfig:
+              OriginAccessIdentity:
+                Fn::Join:
+                - ''
+                - - origin-access-identity/cloudfront/
+                  - Ref: WebsiteBucketOriginAccessIdentity
         Enabled: true
         Aliases: ${self:custom.cdn.aliases}
           # - ${self:custom.cdn.endpoint}
@@ -152,9 +179,6 @@ Outputs:
   WebsiteBucketName:
     Value:
       Ref: WebsiteBucket
-  WebsiteS3URL:
-    Value:
-      Fn::GetAtt: [ WebsiteBucket, WebsiteURL ]
   WebsiteDistributionURL:
     Value:
       Fn::Join:
