@@ -76,8 +76,6 @@ class Plugin {
   }
 
   prepareOriginAccessIdentity(resources) {
-    resources.WebsiteBucket.Properties.AccessControl = 'Private';
-
     const name = this.serverless.getProvider('aws').naming.getApiGatewayName();
     resources.WebsiteBucketOriginAccessIdentity.Properties.CloudFrontOriginAccessIdentityConfig.Comment = `Website: ${name} (${this.options.region})`;
   }
