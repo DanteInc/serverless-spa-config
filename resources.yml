@@ -112,7 +112,7 @@ Resources:
         ViewerCertificate:
           AcmCertificateArn: ${self:custom.cdn.acmCertificateArn}
           SslSupportMethod: sni-only
-          MinimumProtocolVersion: TLSv1
+          MinimumProtocolVersion: TLSv1.2_2021
         Logging:
           IncludeCookies: true
           Bucket: ${self:custom.cdn.logging.bucketName} # ${self:custom.cdn.logging.bucket}.s3.amazonaws.com
@@ -157,7 +157,7 @@ Resources:
         ViewerCertificate:
           AcmCertificateArn: ${self:custom.cdn.acmCertificateArn}
           SslSupportMethod: sni-only
-          MinimumProtocolVersion: TLSv1
+          MinimumProtocolVersion: TLSv1.2_2021
         Logging:
           IncludeCookies: true
           Bucket: ${self:custom.cdn.logging.bucketName} # ${self:custom.cdn.logging.bucket}.s3.amazonaws.com
