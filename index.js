@@ -7,9 +7,16 @@ class Plugin {
   constructor(serverless, options) {
     this.serverless = serverless;
     this.options = options;
-    this.hooks = {
-      'before:deploy:createDeploymentArtifacts': this.createDeploymentArtifacts.bind(this),
-    };
+
+    if (Number(serverless.version.charAt(0)) >= 3) {
+      this.hooks = {
+        'before:package:createDeploymentArtifacts': this.createDeploymentArtifacts.bind(this),
+      };
+    } else {
+      this.hooks = {
+        'before:deploy:createDeploymentArtifacts': this.createDeploymentArtifacts.bind(this),
+      };
+    }
   }
 
   createDeploymentArtifacts() {
@@ -37,7 +44,7 @@ class Plugin {
     // everything except buckets
     const disabled = this.serverless.service.custom.cdn.disabled;
     const enabled = this.serverless.service.custom.cdn.enabled;
-    if ((disabled === undefined && enabled === undefined ) || (disabled != undefined && !disabled) || (enabled != undefined && enabled.includes(this.options.stage))) {
+    if ((disabled === undefined && enabled === undefined) || (disabled != undefined && !disabled) || (enabled != undefined && enabled.includes(this.options.stage))) {
       const distributionConfig = resources.Resources.WebsiteDistribution.Properties.DistributionConfig;
       const redirectDistributionConfig = resources.Resources.RedirectDistribution.Properties.DistributionConfig;
 
