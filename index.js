@@ -47,8 +47,11 @@ class Plugin {
     if ((disabled === undefined && enabled === undefined) || (disabled != undefined && !disabled) || (enabled != undefined && enabled.includes(this.options.stage))) {
       const distributionConfig = resources.Resources.WebsiteDistribution.Properties.DistributionConfig;
       const redirectDistributionConfig = resources.Resources.RedirectDistribution.Properties.DistributionConfig;
+      const bucketPolicy = resources.Resources.WebsiteBucketBucketPolicy;
 
       this.prepareOriginAccessIdentity(resources.Resources);
+
+      this.prepareFailover(distributionConfig, bucketPolicy);
 
       this.prepareComment(distributionConfig, redirectDistributionConfig);
       this.preparePriceClass(distributionConfig, redirectDistributionConfig);
@@ -85,6 +88,32 @@ class Plugin {
   prepareOriginAccessIdentity(resources) {
     const name = this.serverless.getProvider('aws').naming.getApiGatewayName();
     resources.WebsiteBucketOriginAccessIdentity.Properties.CloudFrontOriginAccessIdentityConfig.Comment = `Website: ${name} (${this.options.region})`;
+  }
+
+  prepareFailover(distributionConfig, bucketPolicy) {
+    const failover = this.serverless.service.custom.cdn.failover;
+
+    if (failover && failover[this.options.region]) {
+      distributionConfig.Origins[1].DomainName = failover[this.options.region].bucketDomainName;
+
+      const originAccessIdentityId = failover[this.options.region].originAccessIdentityId;
+      if (originAccessIdentityId && originAccessIdentityId != 'UNDEFINED') {
+        bucketPolicy.Properties.PolicyDocument.Statement[0].Principal.AWS.push(
+          `arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${originAccessIdentityId}`
+        );
+        bucketPolicy.Properties.PolicyDocument.Statement[1].Principal.AWS.push(
+          `arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${originAccessIdentityId}`
+        );
+      }
+
+      if (failover.criteria) {
+        distributionConfig.OriginGroups.Items[0].FailoverCriteria.StatusCodes.Items = failover.criteria;
+      }
+    } else {
+      delete distributionConfig.Origins.pop();
+      delete distributionConfig.OriginGroups;
+      distributionConfig.DefaultCacheBehavior.TargetOriginId = distributionConfig.Origins[0].Id;
+    }
   }
 
   prepareComment(distributionConfig, redirectDistributionConfig) {

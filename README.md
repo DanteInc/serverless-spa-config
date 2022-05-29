@@ -29,10 +29,18 @@ custom:
     domainName: example.com
     endpoint: app.${self:custom.cdn.domainName}
   cdn:
-    # aliases:
-    #   - ${self:custom.cdn.endpoint}
+    aliases:
+      - ${self:custom.cdn.endpoint}
+    acmCertificateArn: arn:aws:acm:us-east-1:account-id:certificate/certificate-id
     # priceClass: PriceClass_100
-    # acmCertificateArn: arn:aws:acm:region:account-id:certificate/certificate-id
+    # failover: 
+    #   # criteria: [ 500, 502, 503, 504 ]
+    #   us-west-2:
+    #     bucketDomainName: ${self:service}-${opt:stage}-us-east-1.s3.us-east-1.amazonaws.com
+    #     originAccessIdentityId: ${cf(us-east-1):${self:service}-${opt:stage}.WebsiteBucketOriginAccessIdentityId, 'UNDEFINED'}
+    #   us-east-1:
+    #     bucketDomainName: ${self:service}-${opt:stage}-us-west-2.s3.us-west-2.amazonaws.com
+    #     originAccessIdentityId: ${cf(us-west-2):${self:service}-${opt:stage}.WebsiteBucketOriginAccessIdentityId, 'UNDEFINED'}
     # logging:
     #   bucketName: ${self:custom.cdn.logging.bucketName}.s3.amazonaws.com
     #   prefix: aws-cloudfront

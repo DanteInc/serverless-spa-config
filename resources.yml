@@ -34,33 +34,41 @@ Resources:
             Effect: Allow
             Principal:
               AWS:
-                Fn::Join:
-                - ' '
-                - - arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity
-                  - Ref: WebsiteBucketOriginAccessIdentity
+                - Fn::Join:
+                  - ' '
+                  - - arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity
+                    - Ref: WebsiteBucketOriginAccessIdentity
+                # - Fn::Join:
+                #   - ' '
+                #   - - arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity
+                #     - ${self:custom.cdn.failover.${opt:region}.originAccessIdentityId}
             Action:
               - s3:GetObject
             Resource:
               Fn::Join:
-              - ''
-              - - 'arn:aws:s3:::'
-                - Ref: WebsiteBucket
-                - '/*'
+                - ''
+                - - 'arn:aws:s3:::'
+                  - Ref: WebsiteBucket
+                  - '/*'
           - Sid: OAIListBucket
             Effect: Allow
             Principal:
               AWS:
-                Fn::Join:
-                - ' '
-                - - arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity
-                  - Ref: WebsiteBucketOriginAccessIdentity
+                - Fn::Join:
+                  - ' '
+                  - - arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity
+                    - Ref: WebsiteBucketOriginAccessIdentity
+                # - Fn::Join:
+                #   - ' '
+                #   - - arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity
+                #     - ${self:custom.cdn.failover.${opt:region}.originAccessIdentityId}
             Action:
               - s3:ListBucket
             Resource:
               Fn::Join:
-              - ''
-              - - 'arn:aws:s3:::'
-                - Ref: WebsiteBucket
+                - ''
+                - - 'arn:aws:s3:::'
+                  - Ref: WebsiteBucket
 
   WebsiteBucketOriginAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
@@ -74,7 +82,7 @@ Resources:
       DistributionConfig:
         Comment: Website ${opt:stage}-${self:service} (${opt:region})
         Origins:
-          - Id: S3Origin
+          - Id: S3Origin # primary
             DomainName:
               Fn::GetAtt: [WebsiteBucket, DomainName]
             S3OriginConfig:
@@ -83,6 +91,31 @@ Resources:
                 - ''
                 - - origin-access-identity/cloudfront/
                   - Ref: WebsiteBucketOriginAccessIdentity
+          - Id: failover
+            DomainName: ${self:custom.cdn.failover.${opt:region}.bucketDomainName}
+            S3OriginConfig:
+              OriginAccessIdentity:
+                Fn::Join:
+                - ''
+                - - origin-access-identity/cloudfront/
+                  - Ref: WebsiteBucketOriginAccessIdentity
+        OriginGroups:
+          Quantity: 1
+          Items:
+            - Id: og1
+              Members:
+                Quantity: 2
+                Items:
+                  - OriginId: S3Origin # primary
+                  - OriginId: failover
+              FailoverCriteria:
+                StatusCodes: 
+                  Quantity: 4
+                  Items:
+                    - 500
+                    - 502
+                    - 503
+                    - 504
         Enabled: true
         Aliases: ${self:custom.cdn.aliases}
           # - ${self:custom.cdn.endpoint}
@@ -94,7 +127,7 @@ Resources:
             ResponseCode: 200
             ResponsePagePath: /index.html
         DefaultCacheBehavior:
-          TargetOriginId: S3Origin
+          TargetOriginId: og1
           AllowedMethods:
             - GET
             - HEAD
@@ -205,3 +238,7 @@ Outputs:
       Ref: WebsiteDistribution
   WebsiteURL:
     Value: https://${self:custom.cdn.endpoint}
+  WebsiteBucketOriginAccessIdentityId:
+    Value:
+      Ref: WebsiteBucketOriginAccessIdentity
+
