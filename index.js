@@ -51,6 +51,8 @@ class Plugin {
 
       this.prepareOriginAccessIdentity(resources.Resources);
 
+      this.prepareApi(distributionConfig);
+
       this.prepareFailover(distributionConfig, bucketPolicy);
 
       this.prepareComment(distributionConfig, redirectDistributionConfig);
@@ -90,27 +92,52 @@ class Plugin {
     resources.WebsiteBucketOriginAccessIdentity.Properties.CloudFrontOriginAccessIdentityConfig.Comment = `Website: ${name} (${this.options.region})`;
   }
 
+  prepareApi(distributionConfig) {
+    const api = this.serverless.service.custom.cdn.api;
+
+    if (api) {
+      distributionConfig.Origins[2].DomainName = api.domainName;
+      distributionConfig.Origins[2].OriginPath = api.originPath;
+      distributionConfig.CacheBehaviors[0].PathPattern = api.pathPattern || '/api-*';
+      distributionConfig.CacheBehaviors[0].ForwardedValues.Headers = api.headers || ['Accept', 'Authorization', 'Referer', 'Content-Type'];
+    } else {
+      distributionConfig.Origins = [
+        distributionConfig.Origins[0],
+        distributionConfig.Origins[1],
+      ];
+      delete distributionConfig.CacheBehaviors;
+    }
+  }
+
   prepareFailover(distributionConfig, bucketPolicy) {
     const failover = this.serverless.service.custom.cdn.failover;
+    const partition = this.serverless.service.custom.partition || 'aws';
 
     if (failover && failover[this.options.region]) {
       distributionConfig.Origins[1].DomainName = failover[this.options.region].bucketDomainName;
 
-      const originAccessIdentityId = failover[this.options.region].originAccessIdentityId;
-      if (originAccessIdentityId && originAccessIdentityId != 'UNDEFINED') {
-        bucketPolicy.Properties.PolicyDocument.Statement[0].Principal.AWS.push(
-          `arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${originAccessIdentityId}`
-        );
-        bucketPolicy.Properties.PolicyDocument.Statement[1].Principal.AWS.push(
-          `arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${originAccessIdentityId}`
-        );
-      }
+      const originAccessIdentityId = _.castArray(failover[this.options.region].originAccessIdentityId || []);
+      const ids = originAccessIdentityId
+        .filter((id) => id != 'UNDEFINED')
+        .map((id) => `arn:${partition}:iam::cloudfront:user/CloudFront Origin Access Identity ${id}`);
+
+      bucketPolicy.Properties.PolicyDocument.Statement[0].Principal.AWS.push(ids);
+      bucketPolicy.Properties.PolicyDocument.Statement[1].Principal.AWS.push(ids);
 
       if (failover.criteria) {
         distributionConfig.OriginGroups.Items[0].FailoverCriteria.StatusCodes.Items = failover.criteria;
       }
     } else {
-      delete distributionConfig.Origins.pop();
+      if (distributionConfig.Origins.length === 3) {
+        distributionConfig.Origins = [
+          distributionConfig.Origins[0],
+          distributionConfig.Origins[2],
+        ];
+      } else {
+        distributionConfig.Origins = [
+          distributionConfig.Origins[0],
+        ];
+      }
       delete distributionConfig.OriginGroups;
       distributionConfig.DefaultCacheBehavior.TargetOriginId = distributionConfig.Origins[0].Id;
     }
