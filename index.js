@@ -121,8 +121,8 @@ class Plugin {
         .filter((id) => id != 'UNDEFINED')
         .map((id) => `arn:${partition}:iam::cloudfront:user/CloudFront Origin Access Identity ${id}`);
 
-      bucketPolicy.Properties.PolicyDocument.Statement[0].Principal.AWS.push(ids);
-      bucketPolicy.Properties.PolicyDocument.Statement[1].Principal.AWS.push(ids);
+      bucketPolicy.Properties.PolicyDocument.Statement[0].Principal.AWS.push(...ids);
+      bucketPolicy.Properties.PolicyDocument.Statement[1].Principal.AWS.push(...ids);
 
       if (failover.criteria) {
         distributionConfig.OriginGroups.Items[0].FailoverCriteria.StatusCodes.Items = failover.criteria;
