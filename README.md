@@ -33,6 +33,10 @@ custom:
       - ${self:custom.cdn.endpoint}
     acmCertificateArn: arn:aws:acm:us-east-1:account-id:certificate/certificate-id
     # priceClass: PriceClass_100
+    # api:
+    #   domainName: ${opt:stage}-api.${self:custom.dns.domainName}
+    #   pathPattern: /api-*
+    #   # originPath: /${opt:stage}
     # failover: 
     #   # criteria: [ 500, 502, 503, 504 ]
     #   us-west-2:
