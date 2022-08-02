@@ -98,7 +98,7 @@ class Plugin {
     if (api) {
       distributionConfig.Origins[2].DomainName = api.domainName;
       distributionConfig.Origins[2].OriginPath = api.originPath;
-      distributionConfig.CacheBehaviors[0].PathPattern = api.pathPattern || '/api-*'
+      distributionConfig.CacheBehaviors[0].PathPattern = api.pathPattern || '/api-*';
       distributionConfig.CacheBehaviors[0].ForwardedValues.Headers = api.headers || ['Accept', 'Authorization', 'Referer', 'Content-Type'];
     } else {
       distributionConfig.Origins = [
@@ -111,15 +111,15 @@ class Plugin {
 
   prepareFailover(distributionConfig, bucketPolicy) {
     const failover = this.serverless.service.custom.cdn.failover;
-    const partition = this.serverless.service.custom.partition || 'aws'
-    
+    const partition = this.serverless.service.custom.partition || 'aws';
+
     if (failover && failover[this.options.region]) {
       distributionConfig.Origins[1].DomainName = failover[this.options.region].bucketDomainName;
 
       const originAccessIdentityId = _.castArray(failover[this.options.region].originAccessIdentityId || []);
       const ids = originAccessIdentityId
         .filter((id) => id != 'UNDEFINED')
-        .map((id) => `arn:${partition}:iam::cloudfront:user/CloudFront Origin Access Identity ${id}`)
+        .map((id) => `arn:${partition}:iam::cloudfront:user/CloudFront Origin Access Identity ${id}`);
 
       bucketPolicy.Properties.PolicyDocument.Statement[0].Principal.AWS.push(ids);
       bucketPolicy.Properties.PolicyDocument.Statement[1].Principal.AWS.push(ids);
